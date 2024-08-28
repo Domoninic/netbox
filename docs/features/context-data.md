@@ -4,7 +4,7 @@ Configuration context data (or "config contexts" for short) is a powerful featur
 
 ```json
 {
-    "syslog-servers": [
+    "syslog_servers": [
         "192.168.43.107",
         "192.168.48.112"
     ]
@@ -41,11 +41,11 @@ For example, suppose we want to specify a set of syslog and NTP servers for all 
 
 ```json
 {
-    "ntp-servers": [
+    "ntp_servers": [
         "172.16.10.22",
         "172.16.10.33"
     ],
-    "syslog-servers": [
+    "syslog_servers": [
         "172.16.9.100",
         "172.16.9.101"
     ]
@@ -56,7 +56,7 @@ But suppose there's a problem at one particular site within this region preventi
 
 ```json
 {
-    "syslog-servers": [
+    "syslog_servers": [
         "192.168.43.107"
     ]
 }
@@ -66,11 +66,11 @@ When the context data for a device at this site is rendered, the second, higher-
 
 ```json
 {
-    "ntp-servers": [
+    "ntp_servers": [
         "172.16.10.22",
         "172.16.10.33"
     ],
-    "syslog-servers": [
+    "syslog_servers": [
         "192.168.43.107"
     ]
 }

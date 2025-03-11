@@ -162,6 +162,16 @@ class RackRoleViewSet(NetBoxModelViewSet):
 
 
 #
+# Rack Types
+#
+
+class RackTypeViewSet(NetBoxModelViewSet):
+    queryset = RackType.objects.all()
+    serializer_class = serializers.RackTypeSerializer
+    filterset_class = filtersets.RackTypeFilterSet
+
+
+#
 # Racks
 #
 
@@ -487,6 +497,16 @@ class InventoryItemRoleViewSet(NetBoxModelViewSet):
     queryset = InventoryItemRole.objects.all()
     serializer_class = serializers.InventoryItemRoleSerializer
     filterset_class = filtersets.InventoryItemRoleFilterSet
+
+
+#
+# Addressing
+#
+
+class MACAddressViewSet(NetBoxModelViewSet):
+    queryset = MACAddress.objects.all()
+    serializer_class = serializers.MACAddressSerializer
+    filterset_class = filtersets.MACAddressFilterSet
 
 
 #

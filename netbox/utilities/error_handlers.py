@@ -49,11 +49,11 @@ def handle_rest_api_exception(request, *args, **kwargs):
     """
     Handle exceptions and return a useful error message for REST API requests.
     """
-    type_, error, traceback = sys.exc_info()
+    type_, error = sys.exc_info()[:2]
     data = {
         'error': str(error),
         'exception': type_.__name__,
-        'netbox_version': settings.VERSION,
+        'netbox_version': settings.RELEASE.full_version,
         'python_version': platform.python_version(),
     }
     return JsonResponse(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

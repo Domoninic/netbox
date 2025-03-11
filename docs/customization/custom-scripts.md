@@ -17,6 +17,9 @@ They can also be used as a mechanism for validating the integrity of data within
 
 Custom scripts are Python code which exists outside the NetBox code base, so they can be updated and changed without interfering with the core NetBox installation. And because they're completely custom, there is no inherent limitation on what a script can accomplish.
 
+!!! danger "Only install trusted scripts"
+    Custom scripts have unrestricted access to change anything in the databse and are inherently unsafe and should only be installed and run from trusted sources.  You should also review and set permissions for who can run scripts if the script can modify any data.
+
 ## Writing Custom Scripts
 
 All custom scripts must inherit from the `extras.scripts.Script` base class. This class provides the functionality necessary to generate forms and log activity.
@@ -68,6 +71,9 @@ script_order = (MyCustomScript, AnotherCustomScript)
 ## Script Attributes
 
 Script attributes are defined under a class named `Meta` within the script. These are optional, but encouraged.
+
+!!! warning
+    These are also defined and used as properties on the base custom script class, so don't use the same names as variables or override them in your custom script.
 
 ### `name`
 
@@ -302,6 +308,7 @@ A particular object within NetBox. Each ObjectVar must specify a particular mode
 * `query_params` - A dictionary of query parameters to use when retrieving available options (optional)
 * `context` - A custom dictionary mapping template context variables to fields, used when rendering `<option>` elements within the dropdown menu (optional; see below)
 * `null_option` - A label representing a "null" or empty choice (optional)
+* `selector` - A boolean that, when True, includes an advanced object selection widget to assist the user in identifying the desired object (optional; False by default)
 
 To limit the selections available within the list, additional query parameters can be passed as the `query_params` dictionary. For example, to show only devices with an "active" status:
 

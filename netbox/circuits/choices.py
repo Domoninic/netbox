@@ -76,3 +76,35 @@ class CircuitTerminationPortSpeedChoices(ChoiceSet):
         (1544, 'T1 (1.544 Mbps)'),
         (2048, 'E1 (2.048 Mbps)'),
     ]
+
+
+class CircuitPriorityChoices(ChoiceSet):
+    key = 'CircuitGroupAssignment.priority'
+
+    PRIORITY_PRIMARY = 'primary'
+    PRIORITY_SECONDARY = 'secondary'
+    PRIORITY_TERTIARY = 'tertiary'
+    PRIORITY_INACTIVE = 'inactive'
+
+    CHOICES = [
+        (PRIORITY_PRIMARY, _('Primary')),
+        (PRIORITY_SECONDARY, _('Secondary')),
+        (PRIORITY_TERTIARY, _('Tertiary')),
+        (PRIORITY_INACTIVE, _('Inactive')),
+    ]
+
+
+#
+# Virtual circuits
+#
+
+class VirtualCircuitTerminationRoleChoices(ChoiceSet):
+    ROLE_PEER = 'peer'
+    ROLE_HUB = 'hub'
+    ROLE_SPOKE = 'spoke'
+
+    CHOICES = [
+        (ROLE_PEER, _('Peer'), 'green'),
+        (ROLE_HUB, _('Hub'), 'blue'),
+        (ROLE_SPOKE, _('Spoke'), 'orange'),
+    ]

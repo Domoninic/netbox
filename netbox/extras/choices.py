@@ -127,23 +127,6 @@ class BookmarkOrderingChoices(ChoiceSet):
         (ORDERING_ALPHABETICAL_ZA, _('Alphabetical (Z-A)')),
     )
 
-#
-# ObjectChanges
-#
-
-
-class ObjectChangeActionChoices(ChoiceSet):
-
-    ACTION_CREATE = 'create'
-    ACTION_UPDATE = 'update'
-    ACTION_DELETE = 'delete'
-
-    CHOICES = (
-        (ACTION_CREATE, _('Created'), 'green'),
-        (ACTION_UPDATE, _('Updated'), 'blue'),
-        (ACTION_DELETE, _('Deleted'), 'red'),
-    )
-
 
 #
 # Journal entries
@@ -172,69 +155,27 @@ class JournalEntryKindChoices(ChoiceSet):
 class LogLevelChoices(ChoiceSet):
 
     LOG_DEBUG = 'debug'
-    LOG_DEFAULT = 'default'
-    LOG_SUCCESS = 'success'
     LOG_INFO = 'info'
+    LOG_SUCCESS = 'success'
     LOG_WARNING = 'warning'
     LOG_FAILURE = 'failure'
 
     CHOICES = (
         (LOG_DEBUG, _('Debug'), 'teal'),
-        (LOG_DEFAULT, _('Default'), 'gray'),
-        (LOG_SUCCESS, _('Success'), 'green'),
         (LOG_INFO, _('Info'), 'cyan'),
+        (LOG_SUCCESS, _('Success'), 'green'),
         (LOG_WARNING, _('Warning'), 'yellow'),
         (LOG_FAILURE, _('Failure'), 'red'),
+
     )
 
     SYSTEM_LEVELS = {
         LOG_DEBUG: logging.DEBUG,
-        LOG_DEFAULT: logging.INFO,
-        LOG_SUCCESS: logging.INFO,
         LOG_INFO: logging.INFO,
+        LOG_SUCCESS: logging.INFO,
         LOG_WARNING: logging.WARNING,
         LOG_FAILURE: logging.ERROR,
     }
-
-
-class DurationChoices(ChoiceSet):
-
-    CHOICES = (
-        (60, _('Hourly')),
-        (720, _('12 hours')),
-        (1440, _('Daily')),
-        (10080, _('Weekly')),
-        (43200, _('30 days')),
-    )
-
-
-#
-# Job results
-#
-
-class JobResultStatusChoices(ChoiceSet):
-
-    STATUS_PENDING = 'pending'
-    STATUS_SCHEDULED = 'scheduled'
-    STATUS_RUNNING = 'running'
-    STATUS_COMPLETED = 'completed'
-    STATUS_ERRORED = 'errored'
-    STATUS_FAILED = 'failed'
-
-    CHOICES = (
-        (STATUS_PENDING, _('Pending'), 'cyan'),
-        (STATUS_SCHEDULED, _('Scheduled'), 'gray'),
-        (STATUS_RUNNING, _('Running'), 'blue'),
-        (STATUS_COMPLETED, _('Completed'), 'green'),
-        (STATUS_ERRORED, _('Errored'), 'red'),
-        (STATUS_FAILED, _('Failed'), 'red'),
-    )
-
-    TERMINAL_STATE_CHOICES = (
-        STATUS_COMPLETED,
-        STATUS_ERRORED,
-        STATUS_FAILED,
-    )
 
 
 #
@@ -319,8 +260,10 @@ class EventRuleActionChoices(ChoiceSet):
 
     WEBHOOK = 'webhook'
     SCRIPT = 'script'
+    NOTIFICATION = 'notification'
 
     CHOICES = (
         (WEBHOOK, _('Webhook')),
         (SCRIPT, _('Script')),
+        (NOTIFICATION, _('Notification')),
     )

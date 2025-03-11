@@ -1,6 +1,5 @@
-from django.utils.translation import gettext_lazy as _
 import django_tables2 as tables
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 from dcim import models
 from netbox.tables import NetBoxTable, columns
@@ -32,6 +31,11 @@ class ManufacturerTable(ContactsColumnMixin, NetBoxTable):
         verbose_name=_('Name'),
         linkify=True
     )
+    racktype_count = columns.LinkedCountColumn(
+        viewname='dcim:racktype_list',
+        url_params={'manufacturer_id': 'pk'},
+        verbose_name=_('Rack Types')
+    )
     devicetype_count = columns.LinkedCountColumn(
         viewname='dcim:devicetype_list',
         url_params={'manufacturer_id': 'pk'},
@@ -59,12 +63,12 @@ class ManufacturerTable(ContactsColumnMixin, NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = models.Manufacturer
         fields = (
-            'pk', 'id', 'name', 'devicetype_count', 'moduletype_count', 'inventoryitem_count', 'platform_count',
-            'description', 'slug', 'tags', 'contacts', 'actions', 'created', 'last_updated',
+            'pk', 'id', 'name', 'racktype_count', 'devicetype_count', 'moduletype_count', 'inventoryitem_count',
+            'platform_count', 'description', 'slug', 'tags', 'contacts', 'actions', 'created', 'last_updated',
         )
         default_columns = (
-            'pk', 'name', 'devicetype_count', 'moduletype_count', 'inventoryitem_count', 'platform_count',
-            'description', 'slug',
+            'pk', 'name', 'racktype_count', 'devicetype_count', 'moduletype_count', 'inventoryitem_count',
+            'platform_count', 'description', 'slug',
         )
 
 
@@ -164,9 +168,7 @@ class ComponentTemplateTable(NetBoxTable):
     id = tables.Column(
         verbose_name=_('ID')
     )
-    name = tables.Column(
-        order_by=('_name',)
-    )
+    name = tables.Column()
 
     class Meta(NetBoxTable.Meta):
         exclude = ('id', )
@@ -221,6 +223,10 @@ class PowerOutletTemplateTable(ComponentTemplateTable):
 
 
 class InterfaceTemplateTable(ComponentTemplateTable):
+    name = tables.Column(
+        verbose_name=_('Name'),
+        order_by=('_name',)
+    )
     enabled = columns.BooleanColumn(
         verbose_name=_('Enabled'),
     )

@@ -53,7 +53,8 @@ class Command(BaseCommand):
 
                 else:
                     raise CommandError(
-                        f"Invalid model: {label}. Model names must be in the format <app_label> or <app_label>.<model_name>."
+                        f"Invalid model: {label}. Model names must be in the format <app_label> or "
+                        f"<app_label>.<model_name>."
                     )
 
         return indexers
@@ -96,9 +97,9 @@ class Command(BaseCommand):
             if i:
                 self.stdout.write(f'{i} entries cached.')
             else:
-                self.stdout.write(f'No objects found.')
+                self.stdout.write('No objects found.')
 
-        msg = f'Completed.'
+        msg = 'Completed.'
         if total_count := search_backend.size:
             msg += f' Total entries: {total_count}'
         self.stdout.write(msg, self.style.SUCCESS)

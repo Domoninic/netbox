@@ -2,7 +2,7 @@
 
 ## What is a REST API?
 
-REST stands for [representational state transfer](https://en.wikipedia.org/wiki/Representational_state_transfer). It's a particular type of API which employs HTTP requests and [JavaScript Object Notation (JSON)](https://www.json.org/) to facilitate create, retrieve, update, and delete (CRUD) operations on objects within an application. Each type of operation is associated with a particular HTTP verb:
+REST stands for [representational state transfer](https://en.wikipedia.org/wiki/REST). It's a particular type of API which employs HTTP requests and [JavaScript Object Notation (JSON)](https://www.json.org/) to facilitate create, retrieve, update, and delete (CRUD) operations on objects within an application. Each type of operation is associated with a particular HTTP verb:
 
 * `GET`: Retrieve an object or list of objects
 * `POST`: Create an object
@@ -101,7 +101,7 @@ See the [filtering documentation](../reference/filtering.md) for more details on
 
 ## Serialization
 
-The REST API employs two types of serializers to represent model data: base serializers and nested serializers. The base serializer is used to present the complete view of a model. This includes all database table fields which comprise the model, and may include additional metadata. A base serializer includes relationships to parent objects, but **does not** include child objects. For example, the `VLANSerializer` includes a nested representation its parent VLANGroup (if any), but does not include any assigned Prefixes.
+The REST API generally represents objects in one of two ways: complete or brief. The base serializer is used to present the complete view of an object. This includes all database table fields which comprise the model, and may include additional metadata. A base serializer includes relationships to parent objects, but **does not** include child objects. For example, the `VLANSerializer` includes a nested representation its parent VLANGroup (if any), but does not include any assigned Prefixes. Serializers employ a minimal "brief" representation of related objects, which includes only the attributes prudent for identifying the object.
 
 ```json
 {
@@ -139,7 +139,7 @@ The REST API employs two types of serializers to represent model data: base seri
 
 ### Related Objects
 
-Related objects (e.g. `ForeignKey` fields) are represented using nested serializers. A nested serializer provides a minimal representation of an object, including only its direct URL and enough information to display the object to a user. When performing write API actions (`POST`, `PUT`, and `PATCH`), related objects may be specified by either numeric ID (primary key), or by a set of attributes sufficiently unique to return the desired object.
+Related objects (e.g. `ForeignKey` fields) are included using nested brief representations. This is a minimal representation of an object, including only its direct URL and enough information to display the object to a user. When performing write API actions (`POST`, `PUT`, and `PATCH`), related objects may be specified by either numeric ID (primary key), or by a set of attributes sufficiently unique to return the desired object.
 
 For example, when creating a new device, its rack can be specified by NetBox ID (PK):
 
@@ -151,7 +151,7 @@ For example, when creating a new device, its rack can be specified by NetBox ID 
 }
 ```
 
-Or by a set of nested attributes which uniquely identify the rack:
+Or by a set of attributes which uniquely identify the rack:
 
 ```json
 {

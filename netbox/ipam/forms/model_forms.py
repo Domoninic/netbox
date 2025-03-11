@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from dcim.models import Device, Interface, Site
+from dcim.forms.mixins import ScopedForm
 from ipam.choices import *
 from ipam.constants import *
 from ipam.formfields import IPNetworkFormField
@@ -14,7 +15,7 @@ from utilities.exceptions import PermissionsViolation
 from utilities.forms import add_blank_choice
 from utilities.forms.fields import (
     CommentField, ContentTypeChoiceField, DynamicModelChoiceField, DynamicModelMultipleChoiceField, NumericArrayField,
-    SlugField,
+    NumericRangeArrayField, SlugField
 )
 from utilities.forms.rendering import FieldSet, InlineFields, ObjectAttribute, TabbedGroups
 from utilities.forms.utils import get_field_value
@@ -41,6 +42,8 @@ __all__ = (
     'ServiceTemplateForm',
     'VLANForm',
     'VLANGroupForm',
+    'VLANTranslationPolicyForm',
+    'VLANTranslationRuleForm',
     'VRFForm',
 )
 
@@ -106,7 +109,8 @@ class RIRForm(NetBoxModelForm):
 class AggregateForm(TenancyForm, NetBoxModelForm):
     rir = DynamicModelChoiceField(
         queryset=RIR.objects.all(),
-        label=_('RIR')
+        label=_('RIR'),
+        quick_add=True
     )
     comments = CommentField()
 
@@ -129,6 +133,7 @@ class ASNRangeForm(TenancyForm, NetBoxModelForm):
     rir = DynamicModelChoiceField(
         queryset=RIR.objects.all(),
         label=_('RIR'),
+        quick_add=True
     )
     slug = SlugField()
     fieldsets = (
@@ -147,6 +152,7 @@ class ASNForm(TenancyForm, NetBoxModelForm):
     rir = DynamicModelChoiceField(
         queryset=RIR.objects.all(),
         label=_('RIR'),
+        quick_add=True
     )
     sites = DynamicModelMultipleChoiceField(
         queryset=Site.objects.all(),
@@ -195,32 +201,26 @@ class RoleForm(NetBoxModelForm):
         ]
 
 
-class PrefixForm(TenancyForm, NetBoxModelForm):
+class PrefixForm(TenancyForm, ScopedForm, NetBoxModelForm):
     vrf = DynamicModelChoiceField(
         queryset=VRF.objects.all(),
         required=False,
         label=_('VRF')
-    )
-    site = DynamicModelChoiceField(
-        label=_('Site'),
-        queryset=Site.objects.all(),
-        required=False,
-        selector=True,
-        null_option='None'
     )
     vlan = DynamicModelChoiceField(
         queryset=VLAN.objects.all(),
         required=False,
         selector=True,
         query_params={
-            'available_at_site': '$site',
+            'available_at_site': '$scope',
         },
         label=_('VLAN'),
     )
     role = DynamicModelChoiceField(
         label=_('Role'),
         queryset=Role.objects.all(),
-        required=False
+        required=False,
+        quick_add=True
     )
     comments = CommentField()
 
@@ -228,16 +228,25 @@ class PrefixForm(TenancyForm, NetBoxModelForm):
         FieldSet(
             'prefix', 'status', 'vrf', 'role', 'is_pool', 'mark_utilized', 'description', 'tags', name=_('Prefix')
         ),
-        FieldSet('site', 'vlan', name=_('Site/VLAN Assignment')),
+        FieldSet('scope_type', 'scope', name=_('Scope')),
+        FieldSet('vlan', name=_('VLAN Assignment')),
         FieldSet('tenant_group', 'tenant', name=_('Tenancy')),
     )
 
     class Meta:
         model = Prefix
         fields = [
-            'prefix', 'vrf', 'site', 'vlan', 'status', 'role', 'is_pool', 'mark_utilized', 'tenant_group', 'tenant',
-            'description', 'comments', 'tags',
+            'prefix', 'vrf', 'vlan', 'status', 'role', 'is_pool', 'mark_utilized', 'scope_type', 'tenant_group',
+            'tenant', 'description', 'comments', 'tags',
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # #18605: only filter VLAN select list if scope field is a Site
+        if scope_field := self.fields.get('scope', None):
+            if scope_field.queryset.model is not Site:
+                self.fields['vlan'].widget.attrs.pop('data-dynamic-params', None)
 
 
 class IPRangeForm(TenancyForm, NetBoxModelForm):
@@ -249,7 +258,8 @@ class IPRangeForm(TenancyForm, NetBoxModelForm):
     role = DynamicModelChoiceField(
         label=_('Role'),
         queryset=Role.objects.all(),
-        required=False
+        required=False,
+        quick_add=True
     )
     comments = CommentField()
 
@@ -309,6 +319,10 @@ class IPAddressForm(TenancyForm, NetBoxModelForm):
         required=False,
         label=_('Make this the primary IP for the device/VM')
     )
+    oob_for_parent = forms.BooleanField(
+        required=False,
+        label=_('Make this the out-of-band IP for the device')
+    )
     comments = CommentField()
 
     fieldsets = (
@@ -320,7 +334,7 @@ class IPAddressForm(TenancyForm, NetBoxModelForm):
                 FieldSet('vminterface', name=_('Virtual Machine')),
                 FieldSet('fhrpgroup', name=_('FHRP Group')),
             ),
-            'primary_for_parent', name=_('Assignment')
+            'primary_for_parent', 'oob_for_parent', name=_('Assignment')
         ),
         FieldSet('nat_inside', name=_('NAT IP (Inside)')),
     )
@@ -328,8 +342,8 @@ class IPAddressForm(TenancyForm, NetBoxModelForm):
     class Meta:
         model = IPAddress
         fields = [
-            'address', 'vrf', 'status', 'role', 'dns_name', 'primary_for_parent', 'nat_inside', 'tenant_group',
-            'tenant', 'description', 'comments', 'tags',
+            'address', 'vrf', 'status', 'role', 'dns_name', 'primary_for_parent', 'oob_for_parent', 'nat_inside',
+            'tenant_group', 'tenant', 'description', 'comments', 'tags',
         ]
 
     def __init__(self, *args, **kwargs):
@@ -348,7 +362,7 @@ class IPAddressForm(TenancyForm, NetBoxModelForm):
 
         super().__init__(*args, **kwargs)
 
-        # Initialize primary_for_parent if IP address is already assigned
+        # Initialize parent object & fields if IP address is already assigned
         if self.instance.pk and self.instance.assigned_object:
             parent = getattr(self.instance.assigned_object, 'parent_object', None)
             if parent and (
@@ -356,6 +370,9 @@ class IPAddressForm(TenancyForm, NetBoxModelForm):
                 self.instance.address.version == 6 and parent.primary_ip6_id == self.instance.pk
             ):
                 self.initial['primary_for_parent'] = True
+
+            if parent and getattr(parent, 'oob_ip_id', None) == self.instance.pk:
+                self.initial['oob_for_parent'] = True
 
             if type(instance.assigned_object) is Interface:
                 self.fields['interface'].widget.add_query_params({
@@ -385,10 +402,15 @@ class IPAddressForm(TenancyForm, NetBoxModelForm):
             })
         elif selected_objects:
             assigned_object = self.cleaned_data[selected_objects[0]]
-            if self.instance.pk and self.instance.assigned_object and self.cleaned_data['primary_for_parent'] and assigned_object != self.instance.assigned_object:
-                raise ValidationError(
-                    _("Cannot reassign IP address while it is designated as the primary IP for the parent object")
-                )
+            if self.instance.pk and self.instance.assigned_object and assigned_object != self.instance.assigned_object:
+                if self.cleaned_data['primary_for_parent']:
+                    raise ValidationError(
+                        _("Cannot reassign primary IP address for the parent device/VM")
+                    )
+                if self.cleaned_data['oob_for_parent']:
+                    raise ValidationError(
+                        _("Cannot reassign out-of-Band IP address for the parent device")
+                    )
             self.instance.assigned_object = assigned_object
         else:
             self.instance.assigned_object = None
@@ -398,6 +420,16 @@ class IPAddressForm(TenancyForm, NetBoxModelForm):
         if self.cleaned_data.get('primary_for_parent') and not interface:
             self.add_error(
                 'primary_for_parent', _("Only IP addresses assigned to an interface can be designated as primary IPs.")
+            )
+
+        # OOB IP assignment is only available if device interface has been assigned.
+        interface = self.cleaned_data.get('interface')
+        if self.cleaned_data.get('oob_for_parent') and not interface:
+            self.add_error(
+                'oob_for_parent', _(
+                    "Only IP addresses assigned to a device interface can be designated as the out-of-band IP for a "
+                    "device."
+                )
             )
 
     def save(self, *args, **kwargs):
@@ -419,6 +451,17 @@ class IPAddressForm(TenancyForm, NetBoxModelForm):
                 parent.save()
             elif ipaddress.address.version == 6 and parent.primary_ip6 == ipaddress:
                 parent.primary_ip6 = None
+                parent.save()
+
+        # Assign/clear this IPAddress as the OOB for the associated Device
+        if type(interface) is Interface:
+            parent = interface.parent_object
+            parent.snapshot()
+            if self.cleaned_data['oob_for_parent']:
+                parent.oob_ip = ipaddress
+                parent.save()
+            elif parent.oob_ip == ipaddress:
+                parent.oob_ip = None
                 parent.save()
 
         return ipaddress
@@ -565,6 +608,9 @@ class FHRPGroupAssignmentForm(forms.ModelForm):
 
 class VLANGroupForm(NetBoxModelForm):
     slug = SlugField()
+    vid_ranges = NumericRangeArrayField(
+        label=_('VLAN IDs')
+    )
     scope_type = ContentTypeChoiceField(
         queryset=ContentType.objects.filter(model__in=VLANGROUP_SCOPE_TYPES),
         widget=HTMXSelect(),
@@ -581,14 +627,14 @@ class VLANGroupForm(NetBoxModelForm):
 
     fieldsets = (
         FieldSet('name', 'slug', 'description', 'tags', name=_('VLAN Group')),
-        FieldSet('min_vid', 'max_vid', name=_('Child VLANs')),
+        FieldSet('vid_ranges', name=_('Child VLANs')),
         FieldSet('scope_type', 'scope', name=_('Scope')),
     )
 
     class Meta:
         model = VLANGroup
         fields = [
-            'name', 'slug', 'description', 'min_vid', 'max_vid', 'scope_type', 'scope', 'tags',
+            'name', 'slug', 'description', 'vid_ranges', 'scope_type', 'tags',
         ]
 
     def __init__(self, *args, **kwargs):
@@ -639,15 +685,55 @@ class VLANForm(TenancyForm, NetBoxModelForm):
     role = DynamicModelChoiceField(
         label=_('Role'),
         queryset=Role.objects.all(),
-        required=False
+        required=False,
+        quick_add=True
+    )
+    qinq_svlan = DynamicModelChoiceField(
+        label=_('Q-in-Q SVLAN'),
+        queryset=VLAN.objects.all(),
+        required=False,
+        query_params={
+            'qinq_role': VLANQinQRoleChoices.ROLE_SERVICE,
+        }
     )
     comments = CommentField()
 
     class Meta:
         model = VLAN
         fields = [
-            'site', 'group', 'vid', 'name', 'status', 'role', 'tenant_group', 'tenant', 'description', 'comments',
-            'tags',
+            'site', 'group', 'vid', 'name', 'status', 'role', 'tenant_group', 'tenant', 'qinq_role', 'qinq_svlan',
+            'description', 'comments', 'tags',
+        ]
+
+
+class VLANTranslationPolicyForm(NetBoxModelForm):
+
+    fieldsets = (
+        FieldSet('name', 'description', 'tags', name=_('VLAN Translation Policy')),
+    )
+
+    class Meta:
+        model = VLANTranslationPolicy
+        fields = [
+            'name', 'description', 'tags',
+        ]
+
+
+class VLANTranslationRuleForm(NetBoxModelForm):
+    policy = DynamicModelChoiceField(
+        label=_('Policy'),
+        queryset=VLANTranslationPolicy.objects.all(),
+        selector=True
+    )
+
+    fieldsets = (
+        FieldSet('policy', 'local_vid', 'remote_vid', 'description', 'tags', name=_('VLAN Translation Rule')),
+    )
+
+    class Meta:
+        model = VLANTranslationRule
+        fields = [
+            'policy', 'local_vid', 'remote_vid', 'description', 'tags',
         ]
 
 

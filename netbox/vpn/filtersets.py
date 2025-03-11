@@ -5,7 +5,7 @@ from django.utils.translation import gettext as _
 from dcim.models import Device, Interface
 from ipam.models import IPAddress, RouteTarget, VLAN
 from netbox.filtersets import NetBoxModelFilterSet, OrganizationalModelFilterSet
-from tenancy.filtersets import TenancyFilterSet
+from tenancy.filtersets import ContactModelFilterSet, TenancyFilterSet
 from utilities.filters import ContentTypeFilter, MultiValueCharFilter, MultiValueNumberFilter
 from virtualization.models import VirtualMachine, VMInterface
 from .choices import *
@@ -25,14 +25,14 @@ __all__ = (
 )
 
 
-class TunnelGroupFilterSet(OrganizationalModelFilterSet):
+class TunnelGroupFilterSet(OrganizationalModelFilterSet, ContactModelFilterSet):
 
     class Meta:
         model = TunnelGroup
         fields = ('id', 'name', 'slug', 'description')
 
 
-class TunnelFilterSet(NetBoxModelFilterSet, TenancyFilterSet):
+class TunnelFilterSet(NetBoxModelFilterSet, TenancyFilterSet, ContactModelFilterSet):
     status = django_filters.MultipleChoiceFilter(
         choices=TunnelStatusChoices
     )
@@ -147,17 +147,6 @@ class IKEProposalFilterSet(NetBoxModelFilterSet):
     group = django_filters.MultipleChoiceFilter(
         choices=DHGroupChoices
     )
-    ike_policy_id = django_filters.ModelMultipleChoiceFilter(
-        field_name='ike_policies',
-        queryset=IKEPolicy.objects.all(),
-        label=_('IKE policy (ID)'),
-    )
-    ike_policy = django_filters.ModelMultipleChoiceFilter(
-        field_name='ike_policies__name',
-        queryset=IKEPolicy.objects.all(),
-        to_field_name='name',
-        label=_('IKE policy (name)'),
-    )
 
     class Meta:
         model = IKEProposal
@@ -189,10 +178,6 @@ class IKEPolicyFilterSet(NetBoxModelFilterSet):
         queryset=IKEProposal.objects.all(),
         to_field_name='name'
     )
-
-    # TODO: Remove in v4.1
-    proposal = ike_proposal
-    proposal_id = ike_proposal_id
 
     class Meta:
         model = IKEPolicy
@@ -255,10 +240,6 @@ class IPSecPolicyFilterSet(NetBoxModelFilterSet):
         to_field_name='name'
     )
 
-    # TODO: Remove in v4.1
-    proposal = ipsec_proposal
-    proposal_id = ipsec_proposal_id
-
     class Meta:
         model = IPSecPolicy
         fields = ('id', 'name', 'description')
@@ -312,7 +293,7 @@ class IPSecProfileFilterSet(NetBoxModelFilterSet):
         )
 
 
-class L2VPNFilterSet(NetBoxModelFilterSet, TenancyFilterSet):
+class L2VPNFilterSet(NetBoxModelFilterSet, TenancyFilterSet, ContactModelFilterSet):
     type = django_filters.MultipleChoiceFilter(
         choices=L2VPNTypeChoices,
         null_value=None
